@@ -10,4 +10,4 @@ void UsageFault_Handler(void){while(1);}
 
 void DebugMon_Handler(void){}
 
-void SysTick_Handler(void){}
+void __attribute__((weak)) SysTick_Handler(void){}

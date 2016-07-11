@@ -74,9 +74,11 @@ env['CPPPATH'] = [
 	'stm32l4xx_cmsis',
   'stm32l4xx_hal',
   'stm32l4xx_usb_device',
+  'freertos',
 	]
 
 stm32l4xx_hal_src = Glob('stm32l4xx_hal/*.c')
+freertos = Glob('freertos/*.c')
 app_src = [
   'main.c',
   'startup_stm32l476xx.s',
@@ -90,6 +92,7 @@ elf = env.Program(
   source = [
     app_src,
     stm32l4xx_hal_src,
+    freertos,
   ])
 
 # Make hex and bin files for our flashing convenience.
