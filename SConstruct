@@ -75,7 +75,7 @@ env['CPPPATH'] = [
 	]
 
 # Program-specific information; the meaty bits.
-env.Program(
+elf = env.Program(
   target = 'mc-logic',
   source = [
     "main.c",
@@ -85,3 +85,10 @@ env.Program(
   ]
 )
 
+# Make hex and bin files for our flashing convenience.
+hex = env.Command("mc-logic.hex",
+                  elf,
+                  "arm-none-eabi-objcopy -O ihex mc-logic.elf mc-logic.hex")
+bin = env.Command("mc-logic.bin",
+                  elf,
+                  "arm-none-eabi-objcopy -O binary mc-logic.elf mc-logic.bin")
