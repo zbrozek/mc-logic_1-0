@@ -16,54 +16,65 @@ env['OBJCOPY'] = 'arm-none-eabi-objcopy'
 env['OBJDUMP'] = 'arm-none-eabi-objdump'
 env['PROGSUFFIX'] = '.elf'
 
-env.Append(LINKFLAGS = [
-  '-Tstm32_flash.ld',
-  '-Wl,--gc-sections',
-  '-Wl,-X',
-  '-Wl,--print-memory-usage',
+# Custom CPU architecture list that we reuse several times.
+env.Append(CPU_FLAGS = [
+  '-mthumb',
+  '-mcpu=cortex-m4',
+  '-mfpu=fpv4-sp-d16',
+  '-mfloat-abi=hard',
+  '-march=armv7e-m',
+  '-mlittle-endian',
   ])
 
-# Flags passed to both C and C++ compilers
+# Flags passed to the linker (note that it's g++).
+env.Append(LINKFLAGS = [
+  '$CPU_FLAGS',
+  '-Tstm32_flash.ld',  # Specify the linker script.
+  '-Wl,--gc-sections',  # Enable garbage collection to remove unused code.
+  '-Wl,-X',  # Delete all temporary local symbols.
+  '-Wl,--print-memory-usage',  # Get a memory usage summary post-linking.
+  ])
+
+# Flags passed to both C and C++ compilers.
 env.Append(CCFLAGS = [
-	'-mcpu=cortex-m4',
-	'-mthumb',
-  '-mlittle-endian',
-#  '-march=armv7e-m',
-#  '-mfpu=fpv4-sp-d16',
-#  '-mfloat-abi=hard',
-	'-Wall',
-	'-g',
-  '-O2',
-	'-fwrapv',
-  '-fno-strict-aliasing',
-	'-fsigned-char',
-	'-ffunction-sections',
+	'$CPU_FLAGS',
+	'-Wall',  # Enable all warnings.
+	'-g',  # Enable debug symbols.
+  '-O2',  # Optimization level.
+	'-fwrapv',  # Enable twos-complement integer overflow.
+  '-fno-strict-aliasing',  # Disable strict aliasing optimizations.
+	'-fsigned-char',  # char defaults to signed.
+	'-ffunction-sections',  # Let the linker do placement optimization.
 	'-fdata-sections',
+  '-fno-exceptions',  # Remove support for exceptions.
 	])
 
-# Flags passed to just the C compiler
+# Flags passed to just the C compiler.
 env.Append(CFLAGS = [
-	'-std=gnu11',
+	'-std=gnu11',  # 2011 C standard plus GNU extensions.
   ])
 
-# Flags passed to just the C++ compiler
+# Flags passed to just the C++ compiler.
 env.Append(CXXFLAGS = [
-  '-std=gnu++14'
+  '-std=gnu++14'  # 2014 C++ standard plus GNU extensions.
   ])
 
-# Symbol definitions
+# Symbol definitions.
 env.Append(CPPDEFINES = [
-  'STM32L476xx',
-  'HSE_VALUE=16000000',
+  'STM32L476xx',  # ST peripheral library wants to know what CPU we have.
+  'HSE_VALUE=16000000',  # Specify our external crystal frequency.
+  '__CORTEX_M4',  # Used by ARM math libraries.
+  '__FPU_PRESENT=1',  # Used by ARM math libraries.
   ])
 
-# Include paths
+# Include paths.
 env['CPPPATH'] = [
 	'#stm32l4xx_cmsis',
   '#stm32l4xx_hal',
   '#stm32l4xx_usb_device',
 	]
 
+# Program-specific information; the meaty bits.
 env.Program(
   target = 'mc-logic',
   source = [
