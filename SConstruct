@@ -1,7 +1,8 @@
 #!python
 
-import multiprocessing
+proj = 'mc-logic'
 
+import multiprocessing
 SetOption('num_jobs', multiprocessing.cpu_count())
 
 env = Environment()
@@ -69,26 +70,34 @@ env.Append(CPPDEFINES = [
 
 # Include paths.
 env['CPPPATH'] = [
-	'#stm32l4xx_cmsis',
-  '#stm32l4xx_hal',
-  '#stm32l4xx_usb_device',
+  '.',
+	'stm32l4xx_cmsis',
+  'stm32l4xx_hal',
+  'stm32l4xx_usb_device',
 	]
+
+stm32l4xx_hal_src = Glob('stm32l4xx_hal/*.c')
+app_src = [
+  'main.c',
+  'startup_stm32l476xx.s',
+  'stm32l4xx_it.c',
+  'system_stm32l4xx.c',
+  ]
 
 # Program-specific information; the meaty bits.
 elf = env.Program(
-  target = 'mc-logic',
+  target = proj,
   source = [
-    "main.c",
-    "startup_stm32l476xx.s",
-    "stm32l4xx_it.c",
-    "system_stm32l4xx.c",
-  ]
-)
+    app_src,
+    stm32l4xx_hal_src,
+  ])
 
 # Make hex and bin files for our flashing convenience.
-hex = env.Command("mc-logic.hex",
-                  elf,
-                  "arm-none-eabi-objcopy -O ihex mc-logic.elf mc-logic.hex")
-bin = env.Command("mc-logic.bin",
-                  elf,
-                  "arm-none-eabi-objcopy -O binary mc-logic.elf mc-logic.bin")
+hex = env.Command(
+  proj + ".hex",
+  elf,
+  "arm-none-eabi-objcopy -O ihex " + proj + ".elf " + proj + ".hex")
+bin = env.Command(
+  proj + ".bin",
+  elf,
+  "arm-none-eabi-objcopy -O binary " + proj + ".elf " + proj + ".bin")
