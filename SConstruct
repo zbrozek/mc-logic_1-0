@@ -27,15 +27,6 @@ env.Append(CPU_FLAGS = [
   '-mlittle-endian',
   ])
 
-# Flags passed to the linker (note that it's g++).
-env.Append(LINKFLAGS = [
-  '$CPU_FLAGS',
-  '-Tstm32_flash.ld',  # Specify the linker script.
-  '-Wl,--gc-sections',  # Enable garbage collection to remove unused code.
-  '-Wl,-X',  # Delete all temporary local symbols.
-  '-Wl,--print-memory-usage',  # Get a memory usage summary post-linking.
-  ])
-
 # Flags passed to both C and C++ compilers.
 env.Append(CCFLAGS = [
 	'$CPU_FLAGS',
@@ -48,6 +39,7 @@ env.Append(CCFLAGS = [
 	'-ffunction-sections',  # Let the linker do placement optimization.
 	'-fdata-sections',
   '-fno-exceptions',  # Remove support for exceptions.
+  '-fdiagnostics-color=always',  # Color output
 	])
 
 # Flags passed to just the C compiler.
@@ -60,47 +52,14 @@ env.Append(CXXFLAGS = [
   '-std=gnu++14'  # 2014 C++ standard plus GNU extensions.
   ])
 
-# Symbol definitions.
-env.Append(CPPDEFINES = [
-  'STM32L476xx',  # ST peripheral library wants to know what CPU we have.
-  'HSE_VALUE=16000000',  # Specify our external crystal frequency.
-  '__CORTEX_M4',  # Used by ARM math libraries.
-  '__FPU_PRESENT=1',  # Used by ARM math libraries.
-  ])
+# Reduce the amount of garbage scrolling by.
+if ARGUMENTS.get('VERBOSE') != '1':
+	env['CCCOMSTR'] = "Compiling $TARGET"
+	env['LINKCOMSTR'] = "Linking $TARGET"
 
-# Include paths.
-env['CPPPATH'] = [
-  '.',
-	'stm32l4xx_cmsis',
-  'stm32l4xx_hal',
-  'stm32l4xx_usb_device',
-  'freertos',
-	]
+# Import the main project child script.
+VariantDir('bin', 'src', duplicate=0)
+bins = SConscript(['bin/SConscript'], exports='env proj')
 
-stm32l4xx_hal_src = Glob('stm32l4xx_hal/*.c')
-freertos = Glob('freertos/*.c')
-app_src = [
-  'main.c',
-  'startup_stm32l476xx.s',
-  'stm32l4xx_it.c',
-  'system_stm32l4xx.c',
-  ]
-
-# Program-specific information; the meaty bits.
-elf = env.Program(
-  target = proj,
-  source = [
-    app_src,
-    stm32l4xx_hal_src,
-    freertos,
-  ])
-
-# Make hex and bin files for our flashing convenience.
-hex = env.Command(
-  proj + ".hex",
-  elf,
-  "arm-none-eabi-objcopy -O ihex " + proj + ".elf " + proj + ".hex")
-bin = env.Command(
-  proj + ".bin",
-  elf,
-  "arm-none-eabi-objcopy -O binary " + proj + ".elf " + proj + ".bin")
+# Import the openocd child script.
+SConscript(['extra/SConscript'], exports='env proj bins')
