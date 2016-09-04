@@ -1,0 +1,11 @@
+#!python
+
+Import('*')
+
+ed = env.Command('erase.dummy', [], 'st-flash erase')
+env.AlwaysBuild(ed)
+env.Alias('erase', ed)
+
+fd = env.Command('flash.dummy', bins[1], 'st-flash --reset write $SOURCE 0x08000000')
+env.AlwaysBuild(fd)
+env.Alias('flash', fd)

@@ -1,0 +1,64 @@
+#!python
+
+Import('*')
+
+# Flags passed to the linker (note that it's g++).
+env.Append(LINKFLAGS = [
+  '$CPU_FLAGS',
+  '-Tsrc/stm32_flash.ld',  # Specify the linker script.
+  '-Wl,--gc-sections',  # Enable garbage collection to remove unused code.
+  '-Wl,-X',  # Delete all temporary local symbols.
+  '-Wl,--print-memory-usage',  # Get a memory usage summary post-linking.
+  ])
+
+# Symbol definitions.
+env.Append(CPPDEFINES = [
+  'STM32L476xx',  # ST peripheral library wants to know what CPU we have.
+  'HSE_VALUE=16000000',  # Specify our external crystal frequency.
+  '__CORTEX_M4',  # Used by ARM math libraries.
+  '__FPU_PRESENT=1',  # Used by ARM math libraries.
+  ])
+
+# Include paths.
+env['CPPPATH'] = [
+  '.',
+	'#third_party/stm32l4xx_cmsis',
+  '#third_party/stm32l4xx_hal',
+  '#third_party/stm32l4xx_usb_device',
+  '#third_party/freertos',
+	]
+
+stm32l4xx_hal_src = Glob('#third_party/stm32l4xx_hal/*.c')
+freertos = Glob('#third_party/freertos/*.c')
+app_src = [
+  'main.c',
+  'startup_stm32l476xx.s',
+  'stm32l4xx_it.c',
+  'system_stm32l4xx.c',
+  ]
+
+# Program-specific information; the meaty bits.
+elf = env.Program(
+  target = proj,
+  source = [
+    app_src,
+    stm32l4xx_hal_src,
+    freertos,
+  ])
+
+# Create some builders that will give us additional outputs.
+hex_bld = Builder (action = '$OBJCOPY -O ihex $SOURCE $TARGET')
+bin_bld = Builder (action = '$OBJCOPY -O binary $SOURCE $TARGET')
+env.Append(BUILDERS = {'Hex' : hex_bld})
+env.Append(BUILDERS = {'Bin' : bin_bld})
+
+# Use those builders to get hex and bin files.
+bin = env.Hex(proj + '.hex', elf)
+hex = env.Bin(proj + '.bin', elf)
+
+# Set the default outputs.
+Default(elf, bin, hex)
+
+# Collect our artifacts and return them for further use.
+objs = ['elf', 'bin', 'hex']
+Return(objs)
