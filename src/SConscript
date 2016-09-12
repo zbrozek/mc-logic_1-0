@@ -15,6 +15,7 @@ env.Append(LINKFLAGS = [
 env.Append(CPPDEFINES = [
   'STM32L476xx',  # ST peripheral library wants to know what CPU we have.
   'HSE_VALUE=16000000',  # Specify our external crystal frequency.
+  'USE_FULL_LL_DRIVER',  # Specify that we want to use the LL drivers.
   '__CORTEX_M4',  # Used by ARM math libraries.
   '__FPU_PRESENT=1',  # Used by ARM math libraries.
   ])
